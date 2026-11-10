@@ -1,0 +1,31 @@
+:root{--bg:#fafaf9;--fg:#1c1917;--muted:#57534e;--card:#fff;--line:#e7e5e4;--accent:#0f766e;--accent-fg:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#141210;--fg:#f5f5f4;--muted:#a8a29e;--card:#1f1c19;--line:#2e2a26;--accent:#2dd4bf;--accent-fg:#042f2e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+.skip{position:absolute;left:-999px}.skip:focus{left:16px;top:8px;background:var(--card);padding:8px}
+.site-header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:10}
+nav{max-width:960px;margin:auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;justify-content:space-between}
+nav ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 18px}
+nav a{text-decoration:none;color:var(--fg)}nav a:hover{color:var(--accent)}
+.brand{font-weight:700}
+main{max-width:960px;margin:auto;padding:0 16px}
+section{padding:48px 0;border-bottom:1px solid var(--line)}
+.hero{text-align:center;padding:64px 0}
+.avatar{border-radius:50%}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.2;margin:16px 0 8px}
+h2{font-size:1.6rem;margin-top:0}
+h3{font-size:1.15rem;margin:12px 0 4px}
+.lead{color:var(--muted);max-width:640px;margin:0 auto 24px}
+.btn{display:inline-block;padding:10px 20px;border-radius:8px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;margin:4px}
+.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card img{width:100%;height:auto;border-radius:8px;display:block}
+.tags{font-size:.88rem;color:var(--muted)}
+.timeline{list-style:none;padding:0;margin:0}
+.timeline li{border-left:3px solid var(--accent);padding:0 0 16px 16px}
+.meta{color:var(--muted);font-size:.9rem;margin:0}
+.skills dt{font-weight:600;margin-top:12px}.skills dd{margin:0;color:var(--muted)}
+address{font-style:normal}
+.site-footer{text-align:center;color:var(--muted);font-size:.9rem;padding:24px 16px}
