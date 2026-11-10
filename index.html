@@ -37,6 +37,23 @@
   </script>
 
   <link rel="stylesheet" href="assets/style.css">
+
+  <!-- Google Search Console verification -->
+  <meta name="google-site-verification" content="30sAjotF1Gglg-_EVpD2LCbYcUsk-VZQFdx3HA7s4Ac" />
+
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G5MBDW1E1F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-G5MBDW1E1F');
+    // Track clicks on CTAs, project links and contact links as GA4 events
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-track]');
+      if (el) gtag('event', 'link_click', { link_name: el.dataset.track, link_url: el.href });
+    });
+  </script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
