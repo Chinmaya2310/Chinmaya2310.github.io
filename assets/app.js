@@ -41,7 +41,7 @@
     var sel = card.querySelector('select'), out = card.querySelector('output');
     function upd() {
       var n = parseInt(sel.value, 10), m = (bp - gp) * n * 30;
-      out.textContent = m > 0 ? rs(m) + '/month · ' + rs(m * 12) + '/year' : 'no saving';
+      out.textContent = m > 0 ? rs(m) + ' a month, or ' + rs(m * 12) + ' a year' : 'nothing';
     }
     if (sel) { sel.addEventListener('change', function () { upd(); track('calculator_use', { per_day: sel.value, brand: card.dataset.brand }); }); upd(); }
     var share = card.querySelector('[data-share]');
@@ -49,8 +49,8 @@
       e.preventDefault();
       var pct = Math.min(99, Math.floor(100 * (bp - gp) / bp));
       var url = SITE + card.dataset.path + '?utm_source=whatsapp&utm_medium=share&utm_campaign=savings_share';
-      var text = card.dataset.brand + ' costs ' + rs(bp) + ' per ' + card.dataset.unit + '. The Jan Aushadhi generic with the same salt costs ' +
-        rs(gp) + (pct > 0 ? ' (' + pct + '% less)' : '') + '. Check your medicines: ' + url;
+      var text = card.dataset.brand + ' costs ' + rs(bp) + ' per ' + card.dataset.unit + '. Jan Aushadhi sells the same salt for ' +
+        rs(gp) + (pct > 0 ? ' (' + pct + '% less)' : '') + '. You can check your own medicines here: ' + url;
       track('share', { method: 'whatsapp', content_type: 'savings', item_id: card.dataset.brand, saving_pct: pct });
       window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
     });
@@ -61,8 +61,8 @@
       track('share', { method: 'copy_link', content_type: 'savings', item_id: card.dataset.brand });
     });
   }
-  document.querySelectorAll('.compare').forEach(wireCompare);
-  var staticCard = document.querySelector('.compare[data-static]');
+  document.querySelectorAll('.cmp').forEach(wireCompare);
+  var staticCard = document.querySelector('.cmp[data-static]');
   if (staticCard) {
     var bp0 = parseFloat(staticCard.dataset.brandUnit), gp0 = parseFloat(staticCard.dataset.genericUnit);
     track('view_savings', { item_id: staticCard.dataset.brand, saving_pct: Math.round(100 * (bp0 - gp0) / bp0), source: 'brand_page' });
@@ -149,29 +149,27 @@
   // e = [brandName, mfr, price, units, genericIndex, brandSlug]
   // g = [slug, name, perUnit, mrp, unitSize, form, saltLabel, units]
   function render(e, g) {
-    var bpu = e[2] / e[3], gpu = g[2], unit = g[5];
-    var pct = bpu > gpu ? Math.min(99, Math.floor(100 * (bpu - gpu) / bpu)) : Math.round(100 * (bpu - gpu) / bpu);
+    var bpu = e[2] / e[3], gpu = g[2], unit = g[5], n = e[3];
+    var good = bpu > gpu;
+    var pct = good ? Math.min(99, Math.floor(100 * (bpu - gpu) / bpu)) : Math.round(100 * (bpu - gpu) / bpu);
     var path = e[5] ? '/brand/' + e[5] + '/' : '/medicine/' + g[0] + '/';
+    var same = gpu * n, units = n === 1 ? unit : unit + 's';
     track('view_savings', { item_id: e[0], saving_pct: pct, source: 'search' });
-    var n = e[3], genPack = gpu * n, save = e[2] - genPack, good = pct > 0;
+    var summary = good
+      ? '<p class="saving">' + n + ' ' + units + ' of the generic would cost <b>' + rs(same) + '</b> instead of ' + rs(e[2]) + '. That\'s <b>' + rs(e[2] - same) + ' less (' + pct + '%)</b>.</p>' +
+        '<p>At <select aria-label="' + unit + 's per day"><option>1</option><option selected>2</option><option>3</option><option>4</option></select> ' + unit + 's a day, you\'d save about <output></output>.</p>'
+      : '<p class="saving">This brand is already cheaper than the Jan Aushadhi version, by ' + rs(gpu - bpu) + ' per ' + unit + '.</p>';
     result.innerHTML =
-      '<article class="compare receipt wide" data-brand="' + esc(e[0]) + '" data-brand-unit="' + bpu + '" data-generic-unit="' + gpu + '" data-unit="' + unit + '" data-path="' + path + '">' +
-      '<header class="r-head"><b>GENERIC BACHAT</b><span>Price check · ' + n + ' ' + unit + 's</span></header>' +
-      '<div class="r-line brand"><div><b>' + esc(e[0]) + '</b><small>' + esc(e[1]) + ' · ' + rs(bpu) + '/' + unit + '</small></div><span class="amt' + (good ? ' struck' : '') + '">' + rs(e[2]) + '</span></div>' +
-      '<div class="r-line gen"><div><b>Jan Aushadhi ' + esc(g[6]) + '</b><small>Same salt · ' + rs(gpu) + '/' + unit + '</small></div><span class="amt">' + rs(genPack) + '</span></div>' +
-      (good ? '<div class="r-total"><span>YOU SAVE</span><div class="stamp">' + pct + '%<small>बचत</small></div><span class="amt">' + rs(save) + '</span></div>'
-            : '<div class="r-total neg"><span>NO SAVING</span><span class="amt">brand is cheaper</span></div>') +
-      (good ? '<div class="r-calc"><label for="calc-n">Taking</label><select id="calc-n"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select> ' + unit + 's a day saves <output></output></div>' : '') +
-      '<div class="r-actions"><button class="btn btn-wa" type="button" data-share>' + WA + 'Share on WhatsApp</button>' +
-      '<a class="btn btn-ghost" href="' + BASE + '/stores/" data-track="find_store_cta">' + PIN + 'Nearest Kendra</a>' +
-      '<a class="btn btn-ghost" href="' + BASE + '/medicine/' + g[0] + '/" data-track="open_generic_page">All brands →</a></div>' +
-      '<p class="r-note"><b>Check your strip:</b> the composition should read exactly <b>' + esc(g[6]) + '</b>, nothing else. Jan Aushadhi pack: ' + esc(g[1]) + ', ' + esc(g[4]) + ' for ' + rs(g[3]) + '. Brand price from a public dataset; may have changed. Ask your doctor or pharmacist before switching.</p>' +
-      '</article>';
-    wireCompare(result.querySelector('.compare'));
+      '<div class="cmp" data-brand="' + esc(e[0]) + '" data-brand-unit="' + bpu + '" data-generic-unit="' + gpu + '" data-unit="' + unit + '" data-path="' + path + '"><table>' +
+      '<tr><td><b>' + esc(e[0]) + '</b><br><small>' + esc(e[1]) + ' · ' + rs(e[2]) + ' for ' + n + '</small></td><td class="price"><span class="' + (good ? 'struck' : '') + '">' + rs(bpu) + '</span><br><small>per ' + unit + '</small></td></tr>' +
+      '<tr class="gen"><td><b>Jan Aushadhi ' + esc(g[6]) + '</b><br><small>' + esc(g[1]) + ' · ' + rs(g[3]) + ' for ' + esc(g[4]) + '</small></td><td class="price">' + rs(gpu) + '<br><small>per ' + unit + '</small></td></tr></table>' +
+      '<div class="body">' + summary +
+      '<div class="links"><button type="button" data-share>Send this on WhatsApp</button><a href="' + BASE + '/stores/" data-track="find_store_cta">Find a Kendra near you</a>' +
+      '<a href="' + BASE + '/medicine/' + g[0] + '/" data-track="open_generic_page">All brands of ' + esc(g[6]) + '</a></div></div>' +
+      '<p class="check">Before buying, check that your strip lists <b>' + esc(g[6]) + '</b> and nothing else. If it has an extra ingredient, this isn\'t the same medicine.</p></div>';
+    wireCompare(result.querySelector('.cmp'));
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  var WA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></svg>';
-  var PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 
   // popular chips on the home page: look the brand up and render it
   document.querySelectorAll('[data-pick]').forEach(function (b) {
