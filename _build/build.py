@@ -53,11 +53,12 @@ def write(rel, text):
         f.write(text)
 
 def pct(b, g):
-    return round(100 * (b - g) / b)
+    v = 100 * (b - g) / b
+    return min(99, int(v)) if v > 0 else round(v)
 
 # ------------------------------------------------------------------ icons
 I = {
- "logo": '<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#0b6e4f"/><rect x="9" y="15" width="22" height="10" rx="5" fill="#fbf8f2" transform="rotate(-35 20 20)"/><path d="M20 20 L26.6 15.4 A5 5 0 0 1 29.3 23.6 L22.7 28.2 Z" fill="#f59e0b" transform="rotate(0)"/></svg>',
+ "logo": '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="#d42a3c" stroke-width="3"/><circle cx="20" cy="20" r="13.5" fill="none" stroke="#d42a3c" stroke-width="1.2" stroke-dasharray="2 2"/><g transform="rotate(-35 20 20)"><rect x="10.5" y="15.5" width="19" height="9" rx="4.5" fill="#f08a24" stroke="#18203a" stroke-width="1.8"/><path d="M20 15.5h5a4.5 4.5 0 0 1 0 9h-5z" fill="#fffcf4" stroke="#18203a" stroke-width="1.8"/></g></svg>',
  "search": '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
  "sun": '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
  "moon": '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
@@ -92,7 +93,7 @@ def head(title, desc, path, jsonld=(), extra_head="", robots="index, follow"):
   <meta name="twitter:card" content="summary_large_image">{ld}
   <script>try{{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
   <link rel="stylesheet" href="{BASE}/assets/style.css">{extra_head}
   <script async src="https://www.googletagmanager.com/gtag/js?id={GA}"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{GA}',{{content_group:'{content_group(path)}'}});</script>
@@ -101,7 +102,7 @@ def head(title, desc, path, jsonld=(), extra_head="", robots="index, follow"):
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header"><nav aria-label="Main">
-    <a class="logo" href="{BASE}/">{I['logo']}<span>{NAME}<small>दवा वही, दाम कम</small></span></a>
+    <a class="logo" href="{BASE}/">{I['logo']}<span>{NAME}<small>दवा वही · दाम कम</small></span></a>
     <ul class="nav-links">
       <li><a href="{BASE}/#search">Compare prices</a></li>
       <li><a href="{BASE}/stores/">Find a Kendra</a></li>
@@ -212,28 +213,28 @@ write("data/stores.json", json.dumps(
     ensure_ascii=False, separators=(",", ":")))
 
 # ------------------------------------------------------------------ components
-def compare_card(b, g, static=False, path=None):
+def compare_card(b, g, static=False, path=None, wide=False):
     unit = g["form"]
     p = pct(b["per_unit"], g["per_unit"])
     path = path or f"/brand/{b.get('slug') or ''}/"
     good = p > 0
+    n = b["units"]
+    gen_pack = g["per_unit"] * n
+    save = b["price"] - gen_pack
+    stamp = f'<div class="stamp">{p}%<small>बचत</small></div>' if good else ''
+    total = (f'<div class="r-total"><span>YOU SAVE</span>{stamp}<span class="amt">{rs(save)}</span></div>' if good else
+             f'<div class="r-total neg"><span>NO SAVING</span><span class="amt">brand is cheaper</span></div>')
     return f"""
-<article class="compare reveal"{' data-static' if static else ''} data-brand="{E(b['name'])}" data-brand-unit="{b['per_unit']:.4f}" data-generic-unit="{g['per_unit']:.4f}" data-unit="{unit}" data-path="{path}">
-  <div class="compare-top">
-    <div class="side"><div class="label">Branded</div><h3>{E(b['name'])}</h3>
-      <p class="sub">{E(short_mfr(b['mfr']))} · {b['units']} {unit}s for {rs(b['price'])}</p>
-      <div class="price">{rs(b['per_unit'])} <small>per {unit}</small></div></div>
-    <div class="vs"><span>vs</span></div>
-    <div class="side generic"><div class="label">Jan Aushadhi generic</div><h3>{E(g['label'])}</h3>
-      <p class="sub">{E(g['name'])} · {E(g['unit_size'])} for {rs(g['mrp'])}</p>
-      <div class="price">{rs(g['per_unit'])} <small>per {unit}</small></div></div>
-  </div>
-  <div class="save-bar"><div>{f'<div class="save-pct">You save {p}%</div><span class="muted">{rs(b["per_unit"] - g["per_unit"])} on every {unit}</span>' if good else f'<div class="save-pct neg">This brand is already cheaper</div><span class="muted">The generic costs {rs(g["per_unit"] - b["per_unit"])} more per {unit}</span>'}</div></div>
-  {f'<div class="calc"><label for="calc-n">If you take</label><select id="calc-n"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select> {unit}s a day, you save <output></output></div>' if good else ''}
-  <div class="actions"><button class="btn btn-wa" type="button" data-share>{I['wa']}Share on WhatsApp</button>
-    <a class="btn" href="{BASE}/stores/" data-track="find_store_cta">{I['pin']}Find a Jan Aushadhi Kendra</a>
+<article class="compare receipt{' wide' if wide else ''}"{' data-static' if static else ''} data-brand="{E(b['name'])}" data-brand-unit="{b['per_unit']:.4f}" data-generic-unit="{g['per_unit']:.4f}" data-unit="{unit}" data-path="{path}">
+  <header class="r-head"><b>GENERIC BACHAT</b><span>Price check · {n} {unit}s</span></header>
+  <div class="r-line brand"><div><b>{E(b['name'])}</b><small>{E(short_mfr(b['mfr']))} · {rs(b['per_unit'])}/{unit}</small></div><span class="amt{' struck' if good else ''}">{rs(b['price'])}</span></div>
+  <div class="r-line gen"><div><b>Jan Aushadhi {E(g['label'])}</b><small>Same salt · {rs(g['per_unit'])}/{unit}</small></div><span class="amt">{rs(gen_pack)}</span></div>
+  {total}
+  {f'<div class="r-calc"><label for="calc-n">Taking</label><select id="calc-n"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select> {unit}s a day saves <output></output></div>' if good else ''}
+  <div class="r-actions"><button class="btn btn-wa" type="button" data-share>{I['wa']}Share on WhatsApp</button>
+    <a class="btn btn-ghost" href="{BASE}/stores/" data-track="find_store_cta">{I['pin']}Nearest Kendra</a>
     <button class="btn btn-ghost" type="button" data-copy>Copy link</button></div>
-  <p class="note"><b>Check your strip:</b> its composition should list exactly <b>{E(g['label'])}</b> and nothing else. Brand price is from a public price dataset and may have changed. Ask your doctor or pharmacist before switching.</p>
+  <p class="r-note"><b>Check your strip:</b> the composition should read exactly <b>{E(g['label'])}</b>, nothing else. Jan Aushadhi pack: {E(g['name'])}, {E(g['unit_size'])} for {rs(g['mrp'])}. Brand price from a public dataset; may have changed. Ask your doctor or pharmacist before switching.</p>
 </article>"""
 
 def brand_table(g, brands, limit=30):
@@ -245,7 +246,7 @@ def brand_table(g, brands, limit=30):
                     f'<td class="num">{rs(b["per_unit"])}</td><td class="num {"pos" if p > 0 else "negv"}">{p}%</td></tr>')
     return f"""<div class="table-wrap"><table>
 <thead><tr><th>Brand</th><th class="num">Pack price</th><th class="num">Per {g['form']}</th><th class="num">Generic saves</th></tr></thead>
-<tbody><tr style="background:var(--brand-soft)"><td><b>Jan Aushadhi: {E(g['name'])}</b><br><small class="muted">PMBI drug code {g['drug_code']}</small></td><td class="num">{rs(g['mrp'])}<br><small class="muted">{E(g['unit_size'])}</small></td><td class="num"><b>{rs(g['per_unit'])}</b></td><td class="num">—</td></tr>
+<tbody><tr class="ja"><td><b>Jan Aushadhi: {E(g['name'])}</b><br><small class="muted">PMBI drug code {g['drug_code']}</small></td><td class="num">{rs(g['mrp'])}<br><small class="muted">{E(g['unit_size'])}</small></td><td class="num"><b>{rs(g['per_unit'])}</b></td><td class="num">—</td></tr>
 {''.join(rows)}</tbody></table></div>"""
 
 def disclaimer():
@@ -259,7 +260,7 @@ POPULAR = ["Dolo 650 Tablet", "PAN 40 Tablet", "Augmentin 625 Duo Tablet", "Telm
 def build_home():
     names = {b["name"]: (b, g) for g in gens for b in g["brands"]}
     pop = [n for n in POPULAR if n in names]
-    top = [(b, g) for b, g in brand_pages[:60] if pct(b["per_unit"], g["per_unit"]) >= 60][:10]
+    top = [(b, g) for b, g in brand_pages[:80] if pct(b["per_unit"], g["per_unit"]) >= 60][:10]
     faq_ld, faq_html = faq_block([
         ("What is a Jan Aushadhi medicine?", "Jan Aushadhi medicines are unbranded generic medicines sold through Pradhan Mantri Bhartiya Janaushadhi Kendras, a Government of India scheme run by PMBI. They contain the same active ingredients (salts) as branded medicines, usually at a much lower price."),
         ("Are generic medicines as good as branded ones?", "In India, a generic and a branded medicine with the same salt, strength and dosage form are meant to be therapeutically equivalent, and Jan Aushadhi products are tested by NABL-accredited labs. Your doctor or pharmacist can confirm whether switching is right for you."),
@@ -275,53 +276,60 @@ def build_home():
              f"Type your branded medicine (Dolo 650, Pan 40, Telma 40…) and see the Jan Aushadhi generic with the same salt, how much you save (typically {median_saving}%), and the nearest Jan Aushadhi Kendra.",
              "/", [site_ld, org_ld, faq_ld])
     chips = "".join(f'<button class="chip" type="button" data-pick="{E(n)}">{E(n.replace(" Tablet", "").replace(" Capsule", ""))}</button>' for n in pop)
-    top_html = "".join(f'<a class="top-item" href="{BASE}/brand/{b["slug"]}/" data-track="top_saving_click"><span><b>{E(b["name"])}</b><small>{E(g["label"])} · {rs(b["per_unit"])} → {rs(g["per_unit"])}</small></span><span class="pct">−{pct(b["per_unit"], g["per_unit"])}%</span></a>' for b, g in top)
+    top_html = "".join(f'<a class="price-tag" href="{BASE}/brand/{b["slug"]}/" data-track="top_saving_click"><span><b>{E(b["name"])}</b><small>{E(g["label"])} · {rs(b["per_unit"])} → {rs(g["per_unit"])}</small></span><span class="pct">−{pct(b["per_unit"], g["per_unit"])}%</span></a>' for b, g in top)
+    demo = names.get("Dolo 650 Tablet")
+    demo_html = compare_card(demo[0], demo[1], path="/brand/dolo-650-tablet/") if demo else ""
     h += f"""
   <main id="main">
-    <section class="hero" id="search"><div class="wrap">
-      <p class="hindi">दवा वही, दाम कम</p>
-      <h1>Same medicine. <span class="hl">Up to 90% cheaper.</span></h1>
-      <p class="lead">Type the medicine on your prescription. We'll show the Jan Aushadhi generic with the same salt and strength, what it costs, and the nearest Jan Aushadhi Kendra that sells it.</p>
-      <form class="search" role="search" onsubmit="return false">
-        {I['search']}
-        <label class="skip" for="q">Search a branded medicine</label>
-        <input id="q" type="search" autocomplete="off" placeholder="Search a medicine, e.g. Dolo 650 or Pan 40" aria-controls="suggest" aria-autocomplete="list">
-        <ul id="suggest" class="suggest" role="listbox"></ul>
-      </form>
-      <div class="popular"><span>Popular:</span>{chips}</div>
-      <div id="result" style="margin-top:26px" aria-live="polite"></div>
-      <div class="stats">
-        <div class="stat reveal"><b>{median_saving}%</b><span>typical saving vs. brands</span></div>
-        <div class="stat reveal"><b>{n_brands // 1000}k+</b><span>branded medicines compared</span></div>
-        <div class="stat reveal"><b>{len(products):,}</b><span>Jan Aushadhi products</span></div>
-        <div class="stat reveal"><b>{len(kendras):,}</b><span>Kendras on the map</span></div>
+    <section class="hero" id="search"><div class="wrap hero-grid">
+      <div>
+        <span class="kicker-hi">दवा वही, दाम कम</span>
+        <h1>Same salt.<br>Same strength.<br><span class="hl">Up to 90% less.</span></h1>
+        <p class="lead">Type the medicine on your prescription. See the Jan Aushadhi generic with the identical salt, what it costs, and the nearest Kendra that sells it.</p>
+        <div class="search-note"><span class="hand">type the name on your strip</span><svg viewBox="0 0 46 34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 6c14-4 30 0 36 18"/><path d="M31 19l7 6 4-9"/></svg></div>
+        <form class="search" role="search" onsubmit="return false">
+          {I['search']}
+          <label class="skip" for="q">Search a branded medicine</label>
+          <input id="q" type="search" autocomplete="off" placeholder="Dolo 650, Pan 40, Telma 40…" aria-controls="suggest" aria-autocomplete="list">
+          <ul id="suggest" class="suggest" role="listbox"></ul>
+        </form>
+        <div class="popular"><span>Try:</span>{chips}</div>
       </div>
-    </div></section>
+      <div class="hero-demo"><span class="tape-strip"></span>{demo_html.replace('id="calc-n"', 'id="calc-demo"').replace('for="calc-n"', 'for="calc-demo"')}<span class="hand">← real prices</span></div>
+    </div>
+    <div class="wrap"><div id="result" style="margin-top:30px" aria-live="polite"></div>
+      <div class="tape">
+        <div><b>{median_saving}%</b><span>typical saving</span></div>
+        <div><b>{n_brands // 1000}k+</b><span>brands compared</span></div>
+        <div><b>{len(products):,}</b><span>Jan Aushadhi products</span></div>
+        <div><b>{len(kendras):,}</b><span>Kendras mapped</span></div>
+      </div></div>
+    </section>
 
     <section class="section alt"><div class="wrap">
-      <div class="section-head reveal"><span class="eyebrow">How it works</span><h2>Three steps to a smaller pharmacy bill</h2></div>
-      <div class="grid3">
-        <div class="card reveal"><div class="n">1</div><h3>Search your brand</h3><p>Type the name printed on your strip. We know {n_brands // 1000}k+ branded tablets and capsules.</p></div>
-        <div class="card reveal"><div class="n">2</div><h3>See the same salt, cheaper</h3><p>We match the active ingredient, strength and form to the official Jan Aushadhi list and compare the price per tablet.</p></div>
-        <div class="card reveal"><div class="n">3</div><h3>Buy it nearby</h3><p>Find the closest of {len(kendras):,} Jan Aushadhi Kendras on a map, with directions. Share the saving with family on WhatsApp.</p></div>
+      <div class="section-head reveal"><span class="eyebrow">How it works</span><h2>Three steps to a <span class="hl">smaller bill</span></h2></div>
+      <div class="steps">
+        <div class="step reveal"><span class="n">1.</span><h3>Search your brand</h3><p>Type the name printed on your strip. We know {n_brands // 1000}k+ branded tablets and capsules.</p></div>
+        <div class="step reveal"><span class="n">2.</span><h3>Same salt, cheaper</h3><p>We match the active ingredient, strength and form against the official Jan Aushadhi list, and compare the price per tablet.</p></div>
+        <div class="step reveal"><span class="n">3.</span><h3>Buy it nearby</h3><p>Find the closest of {len(kendras):,} Jan Aushadhi Kendras, with directions. Share the saving with family on WhatsApp.</p></div>
       </div>
     </div></section>
 
     <section class="section"><div class="wrap">
-      <div class="section-head reveal"><span class="eyebrow">Biggest savings</span><h2>Popular brands with the biggest price gap</h2><p>Price per tablet or capsule, brand vs. the Jan Aushadhi generic with the same salt.</p></div>
-      <div class="top-list">{top_html}</div>
-      <p style="margin-top:18px"><a class="btn btn-ghost" href="{BASE}/medicines/">Browse all {len(gens)} medicines →</a></p>
+      <div class="section-head reveal"><span class="eyebrow">Biggest price gaps</span><h2>Popular brands, <span class="hl">marked down</span></h2><p>Price per tablet or capsule: the brand vs. the Jan Aushadhi generic with the same salt.</p></div>
+      <div class="tags-grid">{top_html}</div>
+      <p style="margin-top:22px"><a class="btn btn-ghost" href="{BASE}/medicines/">Browse all {len(gens)} medicines →</a></p>
     </div></section>
 
-    <section class="section alt"><div class="wrap" style="display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:center">
-      <div class="reveal"><span class="eyebrow">Store finder</span><h2>{len(kendras):,} Kendras. One is probably near you.</h2>
+    <section class="section alt"><div class="wrap store-cta">
+      <div class="reveal"><span class="eyebrow">Store finder</span><h2>{len(kendras):,} Kendras. <span class="hl">One is near you.</span></h2>
         <p class="muted">Use your location or PIN code to see the nearest Jan Aushadhi Kendras on a map, with one-tap directions.</p>
-        <a class="btn" href="{BASE}/stores/" data-track="find_store_cta">{I['pin']}Find the nearest Kendra</a></div>
-      <div class="card reveal"><h3>Popular cities</h3><div class="links-cloud">{popular_cities_html()}</div></div>
+        <a class="btn btn-leaf" href="{BASE}/stores/" data-track="find_store_cta">{I['pin']}Find the nearest Kendra</a></div>
+      <div class="board reveal"><h3>Most Kendras</h3><div class="links-cloud">{popular_cities_html()}</div></div>
     </div></section>
 
     <section class="section"><div class="wrap"><div class="prose">
-      <div class="section-head"><span class="eyebrow">Questions</span><h2>Frequently asked questions</h2></div>
+      <div class="section-head"><span class="eyebrow">Questions</span><h2>Frequently asked</h2></div>
       {faq_html}
       {disclaimer()}
     </div></div></section>
@@ -354,12 +362,12 @@ def build_generic(g, related):
     h += f"""
   <main id="main" class="wrap">
     {ch}
-    <header class="page-head">
+    <div class="page-split"><header class="page-head">
       <ul class="pills"><li>{E(g['group'])}</li><li>{form.capitalize()}</li>{'<li>Sustained release</li>' if g['release'] == 'mr' else ''}</ul>
-      <h1>{E(g['label'])} {form}: Jan Aushadhi price and brands</h1>
+      <h1>{E(g['label'])} {form}: <span class="hl">Jan Aushadhi price</span> vs brands</h1>
       <p class="lead">The Jan Aushadhi generic costs <b>{rs(g['per_unit'])} per {form}</b> ({rs(g['mrp'])} for {E(g['unit_size'])}). We found <b>{len(bl)} brands</b> with the same salt and strength; the average costs {rs(avg_b)} per {form}.</p>
     </header>
-    {compare_card(best, g, path=path)}
+    {compare_card(best, g, path=path)}</div>
     <div class="prose">
       <h2>All brands of {E(g['label'])} vs. Jan Aushadhi</h2>
       <p class="muted">Most-used brands first. Price per {form} lets you compare different pack sizes.</p>
@@ -394,12 +402,13 @@ def build_brand(b, g):
     h += f"""
   <main id="main" class="wrap">
     {ch}
-    <header class="page-head">
-      <ul class="pills"><li>{E(g['group'])}</li><li>Same salt: {E(g['label'])}</li></ul>
-      <h1>{E(short)}: cheaper Jan Aushadhi generic</h1>
-      <p class="lead">{E(b['name'])} by {E(short_mfr(b['mfr']))} contains <b>{E(g['label'])}</b>. The Jan Aushadhi generic with the same salt costs <b>{p}% less</b> per {form}.</p>
+    <div class="page-split"><header class="page-head">
+      <ul class="pills"><li>{E(g['group'])}</li><li>{E(g['label'])}</li></ul>
+      <h1>{E(short)}: the <span class="hl">{p}% cheaper</span> generic</h1>
+      <p class="lead">{E(b['name'])} by {E(short_mfr(b['mfr']))} contains <b>{E(g['label'])}</b>. The Jan Aushadhi generic with the same salt costs {rs(g['per_unit'])} per {form} instead of {rs(b['per_unit'])}.</p>
+      <p class="hand">same salt, same strength ✓</p>
     </header>
-    {compare_card(b, g, static=True, path=path)}
+    {compare_card(b, g, static=True, path=path)}</div>
     <div class="prose">
       <h2>Other brands with the same salt</h2>
       <p class="muted">All contain {E(g['label'])} ({form}).</p>
@@ -455,7 +464,7 @@ def build_stores():
 <header class="page-head"><h1>Find a Jan Aushadhi Kendra near you</h1>
 <p class="lead">{len(kendras):,} Kendras from the official PMBI list. Use your location, or type a PIN code.</p></header>
 <div class="store-tools">
-  <button id="use-loc" class="btn" type="button">{I['loc']}Use my location</button>
+  <button id="use-loc" class="btn btn-leaf" type="button">{I['loc']}Use my location</button>
   <form id="pin-form" style="display:flex;gap:8px"><label class="skip" for="pin">PIN code</label><input id="pin" inputmode="numeric" maxlength="6" placeholder="PIN code, e.g. 211012"><button class="btn btn-ghost" type="submit">Search</button></form>
 </div>
 <p id="store-msg" class="status-msg" aria-live="polite">Your location is used only in your browser to sort stores by distance.</p>

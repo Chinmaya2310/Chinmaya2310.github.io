@@ -41,13 +41,13 @@
     var sel = card.querySelector('select'), out = card.querySelector('output');
     function upd() {
       var n = parseInt(sel.value, 10), m = (bp - gp) * n * 30;
-      out.textContent = m > 0 ? rs(m) + ' a month (' + rs(m * 12) + ' a year)' : 'no saving';
+      out.textContent = m > 0 ? rs(m) + '/month · ' + rs(m * 12) + '/year' : 'no saving';
     }
     if (sel) { sel.addEventListener('change', function () { upd(); track('calculator_use', { per_day: sel.value, brand: card.dataset.brand }); }); upd(); }
     var share = card.querySelector('[data-share]');
     if (share) share.addEventListener('click', function (e) {
       e.preventDefault();
-      var pct = Math.round(100 * (bp - gp) / bp);
+      var pct = Math.min(99, Math.floor(100 * (bp - gp) / bp));
       var url = SITE + card.dataset.path + '?utm_source=whatsapp&utm_medium=share&utm_campaign=savings_share';
       var text = card.dataset.brand + ' costs ' + rs(bp) + ' per ' + card.dataset.unit + '. The Jan Aushadhi generic with the same salt costs ' +
         rs(gp) + (pct > 0 ? ' (' + pct + '% less)' : '') + '. Check your medicines: ' + url;
@@ -150,25 +150,22 @@
   // g = [slug, name, perUnit, mrp, unitSize, form, saltLabel, units]
   function render(e, g) {
     var bpu = e[2] / e[3], gpu = g[2], unit = g[5];
-    var pct = Math.round(100 * (bpu - gpu) / bpu);
+    var pct = bpu > gpu ? Math.min(99, Math.floor(100 * (bpu - gpu) / bpu)) : Math.round(100 * (bpu - gpu) / bpu);
     var path = e[5] ? '/brand/' + e[5] + '/' : '/medicine/' + g[0] + '/';
     track('view_savings', { item_id: e[0], saving_pct: pct, source: 'search' });
+    var n = e[3], genPack = gpu * n, save = e[2] - genPack, good = pct > 0;
     result.innerHTML =
-      '<article class="compare reveal in" data-brand="' + esc(e[0]) + '" data-brand-unit="' + bpu + '" data-generic-unit="' + gpu + '" data-unit="' + unit + '" data-path="' + path + '">' +
-      '<div class="compare-top">' +
-      '<div class="side"><div class="label">Your brand</div><h3>' + esc(e[0]) + '</h3><p class="sub">' + esc(e[1]) + ' · ' + e[3] + ' ' + unit + 's for ' + rs(e[2]) + '</p>' +
-      '<div class="price">' + rs(bpu) + ' <small>per ' + unit + '</small></div></div>' +
-      '<div class="vs"><span>vs</span></div>' +
-      '<div class="side generic"><div class="label">Jan Aushadhi generic</div><h3>' + esc(g[6]) + '</h3><p class="sub">' + esc(g[1]) + ' · ' + esc(g[4]) + ' for ' + rs(g[3]) + '</p>' +
-      '<div class="price">' + rs(gpu) + ' <small>per ' + unit + '</small></div></div></div>' +
-      '<div class="save-bar"><div>' + (pct > 0 ? '<div class="save-pct">You save ' + pct + '%</div><span class="muted">' + rs(bpu - gpu) + ' on every ' + unit + '</span>'
-        : '<div class="save-pct neg">This brand is already cheaper</div><span class="muted">The generic costs ' + rs(gpu - bpu) + ' more per ' + unit + '</span>') + '</div>' +
-      '<a class="btn btn-ghost" href="' + BASE + '/medicine/' + g[0] + '/" data-track="open_generic_page">All brands of this medicine →</a></div>' +
-      (pct > 0 ? '<div class="calc"><label for="calc-n">If you take</label><select id="calc-n"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select> ' + unit + 's a day, you save <output></output></div>' : '') +
-      '<div class="actions"><button class="btn btn-wa" type="button" data-share>' + WA + 'Share on WhatsApp</button>' +
-      '<a class="btn" href="' + BASE + '/stores/" data-track="find_store_cta">' + PIN + 'Find a Jan Aushadhi Kendra</a>' +
-      '<button class="btn btn-ghost" type="button" data-copy>Copy link</button></div>' +
-      '<p class="note"><b>Check your strip:</b> its composition should list exactly <b>' + esc(g[6]) + '</b> and nothing else. Brand price is from a public price dataset and may have changed. Ask your doctor or pharmacist before switching.</p>' +
+      '<article class="compare receipt wide" data-brand="' + esc(e[0]) + '" data-brand-unit="' + bpu + '" data-generic-unit="' + gpu + '" data-unit="' + unit + '" data-path="' + path + '">' +
+      '<header class="r-head"><b>GENERIC BACHAT</b><span>Price check · ' + n + ' ' + unit + 's</span></header>' +
+      '<div class="r-line brand"><div><b>' + esc(e[0]) + '</b><small>' + esc(e[1]) + ' · ' + rs(bpu) + '/' + unit + '</small></div><span class="amt' + (good ? ' struck' : '') + '">' + rs(e[2]) + '</span></div>' +
+      '<div class="r-line gen"><div><b>Jan Aushadhi ' + esc(g[6]) + '</b><small>Same salt · ' + rs(gpu) + '/' + unit + '</small></div><span class="amt">' + rs(genPack) + '</span></div>' +
+      (good ? '<div class="r-total"><span>YOU SAVE</span><div class="stamp">' + pct + '%<small>बचत</small></div><span class="amt">' + rs(save) + '</span></div>'
+            : '<div class="r-total neg"><span>NO SAVING</span><span class="amt">brand is cheaper</span></div>') +
+      (good ? '<div class="r-calc"><label for="calc-n">Taking</label><select id="calc-n"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select> ' + unit + 's a day saves <output></output></div>' : '') +
+      '<div class="r-actions"><button class="btn btn-wa" type="button" data-share>' + WA + 'Share on WhatsApp</button>' +
+      '<a class="btn btn-ghost" href="' + BASE + '/stores/" data-track="find_store_cta">' + PIN + 'Nearest Kendra</a>' +
+      '<a class="btn btn-ghost" href="' + BASE + '/medicine/' + g[0] + '/" data-track="open_generic_page">All brands →</a></div>' +
+      '<p class="r-note"><b>Check your strip:</b> the composition should read exactly <b>' + esc(g[6]) + '</b>, nothing else. Jan Aushadhi pack: ' + esc(g[1]) + ', ' + esc(g[4]) + ' for ' + rs(g[3]) + '. Brand price from a public dataset; may have changed. Ask your doctor or pharmacist before switching.</p>' +
       '</article>';
     wireCompare(result.querySelector('.compare'));
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
