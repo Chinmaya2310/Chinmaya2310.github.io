@@ -245,7 +245,7 @@ POPULAR = ["Dolo 650 Tablet", "PAN 40 Tablet", "Augmentin 625 Duo Tablet", "Telm
 def build_home():
     names = {b["name"]: (b, g) for g in gens for b in g["brands"]}
     pop = [names[n] for n in POPULAR if n in names]
-    examples = ", ".join(f'<button type="button" data-pick="{E(b["name"])}">{E(b["name"].replace(" Tablet", "").replace(" Capsule", ""))}</button>' for b, g in pop[:6])
+    examples = "".join(f'<button type="button" data-pick="{E(b["name"])}">{E(b["name"].replace(" Tablet", "").replace(" Capsule", ""))}</button>' for b, g in pop[:6])
     rows = "".join(
         f'<tr><td><a href="{BASE}/brand/{b["slug"]}/">{E(b["name"])}</a></td><td>{E(g["label"])}</td>'
         f'<td class="n">{rs(b["per_unit"])}</td><td class="n">{rs(g["per_unit"])}</td><td class="n save">{pct(b["per_unit"], g["per_unit"])}%</td></tr>'
@@ -272,7 +272,7 @@ def build_home():
     <input id="q" type="search" autocomplete="off" placeholder="e.g. Dolo 650" aria-controls="suggest" aria-autocomplete="list">
     <ul id="suggest" class="suggest" role="listbox"></ul>
   </form>
-  <p class="examples">Try {examples}.</p>
+  <p class="examples">Try {examples}</p>
   <div id="result" aria-live="polite"></div>
 
   <h2>Some common medicines</h2>
