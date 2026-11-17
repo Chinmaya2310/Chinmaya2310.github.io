@@ -1,0 +1,4 @@
+_data/raw/
+_data/matched.json
+.DS_Store
+__pycache__/
