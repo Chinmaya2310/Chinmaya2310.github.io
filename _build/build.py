@@ -481,7 +481,7 @@ def build_about():
 
 def build_404():
     h = head(f"Page not found | {NAME}", "This page doesn't exist.", "/404.html", robots="noindex")
-    h += f"""<main id="main" class="wrap"><h1>Page not found</h1><script>var p=location.pathname;if(/^\/generic-bachat(\/|$)/.test(p))location.replace((p.slice(15)||'/')+location.search+location.hash);</script><p><a href="{BASE}/">Search for a medicine</a> or <a href="{BASE}/stores/">find a Kendra</a>.</p></main>"""
+    h += f"""<main id="main" class="wrap"><h1>Page not found</h1><script>var p=location.pathname;if(/^\\/generic-bachat(\\/|$)/.test(p))location.replace((p.slice(15)||'/')+location.search+location.hash);</script><p><a href="{BASE}/">Search for a medicine</a> or <a href="{BASE}/stores/">find a Kendra</a>.</p></main>"""
     write("404.html", h + FOOT)
 
 def build_sitemap():
