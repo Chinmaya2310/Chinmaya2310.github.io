@@ -103,7 +103,7 @@ def content_group(path):
 FOOT = f"""
 <footer class="site-footer"><div class="wrap">
   <p>This site only compares prices. It isn't medical advice, and it isn't connected to PMBI or the Government of India. Talk to your doctor or pharmacist before you switch any medicine.</p>
-  <p>Jan Aushadhi prices and Kendra list from janaushadhi.gov.in ({DATA_DATE}). Brand prices from a public dataset, so some will be out of date.
+  <p>Jan Aushadhi prices and Kendra list from janaushadhi.gov.in. Brand prices from a public dataset, so some will be out of date.
   <a href="{BASE}/about/">How this works</a> · Made by <a href="{PORTFOLIO}?utm_source=generic_bachat&utm_medium=referral&utm_campaign=footer" data-track="footer_author">Chinmaya Nayak</a></p>
 </div></footer>
 </body>
@@ -314,7 +314,7 @@ def build_generic(g, related):
                "dosageForm": form.capitalize(), "activeIngredient": [f"{salt_title(s)} {strength_label(st)}" for s, st in g["comps"]],
                "offers": {"@type": "Offer", "price": round(g["mrp"], 2), "priceCurrency": "INR", "seller": {"@type": "Organization", "name": "Jan Aushadhi (PMBI)"}}}
     faq_ld, faq_html = faq_block([
-        (f"What does Jan Aushadhi {g['label']} cost?", f"{rs(g['mrp'])} for {g['unit_size']}, which is {rs(g['per_unit'])} per {form} (PMBI list, {DATA_DATE})."),
+        (f"What does Jan Aushadhi {g['label']} cost?", f"{rs(g['mrp'])} for {g['unit_size']}, which is {rs(g['per_unit'])} per {form} (PMBI list)."),
         (f"Which brands contain {g['label']}?", f"{len(bl)} brands in my data, for example {', '.join(b['name'] for b in bl[:5])}."),
     ])
     best = bl[0]
