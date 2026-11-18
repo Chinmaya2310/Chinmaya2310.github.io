@@ -7,8 +7,10 @@ import json, os, re, html, statistics, datetime, shutil, collections
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "_data", "raw")
-BASE = "/generic-bachat"
+BASE = ""
 SITE = "https://chinmaya2310.github.io" + BASE
+PORTFOLIO = "https://chinmaya2310.github.io/portfolio/"
+GSC = "30sAjotF1Gglg-_EVpD2LCbYcUsk-VZQFdx3HA7s4Ac"
 GA = "G-G5MBDW1E1F"
 NAME = "Generic Bachat"
 TODAY = datetime.date.today().isoformat()
@@ -59,6 +61,7 @@ def pct(b, g):
 # ------------------------------------------------------------------ layout
 def head(title, desc, path, jsonld=(), extra_head="", robots="index, follow"):
     url = SITE + path
+    gsc = f'\n  <meta name="google-site-verification" content="{GSC}">' if path == "/" else ""
     ld = "".join(f'\n  <script type="application/ld+json">{json.dumps(j, ensure_ascii=False)}</script>' for j in jsonld)
     return f"""<!DOCTYPE html>
 <html lang="en-IN" data-base="{BASE}">
@@ -67,7 +70,7 @@ def head(title, desc, path, jsonld=(), extra_head="", robots="index, follow"):
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{E(title)}</title>
   <meta name="description" content="{E(desc)}">
-  <meta name="robots" content="{robots}">
+  <meta name="robots" content="{robots}">{gsc}
   <link rel="canonical" href="{url}">
   <link rel="icon" href="{BASE}/assets/favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="website">
@@ -101,7 +104,7 @@ FOOT = f"""
 <footer class="site-footer"><div class="wrap">
   <p>This site only compares prices. It isn't medical advice, and it isn't connected to PMBI or the Government of India. Talk to your doctor or pharmacist before you switch any medicine.</p>
   <p>Jan Aushadhi prices and Kendra list from janaushadhi.gov.in ({DATA_DATE}). Brand prices from a public dataset, so some will be out of date.
-  <a href="{BASE}/about/">How this works</a> · Made by <a href="https://chinmaya2310.github.io/?utm_source=generic_bachat&utm_medium=referral&utm_campaign=footer" data-track="footer_author">Chinmaya Nayak</a></p>
+  <a href="{BASE}/about/">How this works</a> · Made by <a href="{PORTFOLIO}?utm_source=generic_bachat&utm_medium=referral&utm_campaign=footer" data-track="footer_author">Chinmaya Nayak</a></p>
 </div></footer>
 </body>
 </html>
@@ -456,7 +459,7 @@ def build_about():
              "/about/", [cld])
     h += f"""<main id="main" class="wrap">{ch}
 <h1>How this works</h1>
-<p class="lead">Generic Bachat is a small side project by <a href="https://chinmaya2310.github.io/?utm_source=generic_bachat&utm_medium=referral&utm_campaign=about">Chinmaya Nayak</a>, an M.Tech student at IIIT Allahabad. It doesn't sell anything and isn't connected to PMBI or the government.</p>
+<p class="lead">Generic Bachat is a small side project by <a href="{PORTFOLIO}?utm_source=generic_bachat&utm_medium=referral&utm_campaign=about">Chinmaya Nayak</a>, an M.Tech student at IIIT Allahabad. It doesn't sell anything and isn't connected to PMBI or the government.</p>
 
 <h2>Where the data comes from</h2>
 <p><b>Jan Aushadhi prices:</b> PMBI's product list on janaushadhi.gov.in, downloaded on {DATA_DATE}. {len(products):,} products.</p>
@@ -478,7 +481,7 @@ def build_about():
 
 def build_404():
     h = head(f"Page not found | {NAME}", "This page doesn't exist.", "/404.html", robots="noindex")
-    h += f"""<main id="main" class="wrap"><h1>Page not found</h1><p><a href="{BASE}/">Search for a medicine</a> or <a href="{BASE}/stores/">find a Kendra</a>.</p></main>"""
+    h += f"""<main id="main" class="wrap"><h1>Page not found</h1><script>var p=location.pathname;if(/^\/generic-bachat(\/|$)/.test(p))location.replace((p.slice(15)||'/')+location.search+location.hash);</script><p><a href="{BASE}/">Search for a medicine</a> or <a href="{BASE}/stores/">find a Kendra</a>.</p></main>"""
     write("404.html", h + FOOT)
 
 def build_sitemap():
@@ -509,3 +512,4 @@ if __name__ == "__main__":
     build_404()
     build_sitemap()
     open(os.path.join(ROOT, ".nojekyll"), "w").close()
+    write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\nSitemap: {PORTFOLIO}sitemap.xml\n")

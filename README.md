@@ -2,7 +2,7 @@
 
 Find the cheaper Jan Aushadhi generic for a branded medicine, see the saving per tablet, and locate the nearest Jan Aushadhi Kendra.
 
-Live: https://chinmaya2310.github.io/generic-bachat/
+Live: https://chinmaya2310.github.io/ (moved from /generic-bachat/ on 2026-11-18)
 
 ## Data
 - Jan Aushadhi products, MRPs and Kendra list: official PMBI API behind janaushadhi.gov.in (fetched 17 Nov 2026)
